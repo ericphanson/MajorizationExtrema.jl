@@ -3,6 +3,10 @@ uuid = "42adfb1e-7d51-11e9-2954-1f97c1ef8590"
 authors = ["Eric"]
 version = "0.1.0"
 
+[deps]
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+
 [compat]
 julia = "1"
 
