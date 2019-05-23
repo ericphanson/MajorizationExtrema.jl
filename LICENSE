@@ -1,4 +1,6 @@
-Copyright (c) 2019 Eric
+The file `src/fisher_yates!.jl` is under its own license, included as a comment at the top of the file. The rest of this repository is under the following license:
+
+Copyright (c) 2019 Eric Hanson
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

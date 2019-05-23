@@ -1,11 +1,12 @@
 module MajorizationExtrema
 
-using LinearAlgebra
-using StatsBase: fisher_yates_sample!
+using LinearAlgebra, Random
 
 export simplexpt, randsimplexpt
 export TV, ≺
 export majmax, majmin, localbound
+
+include("fisher_yates!.jl")
 
 """
     simplexpt(unif)
