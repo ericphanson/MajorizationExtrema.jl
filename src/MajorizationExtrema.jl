@@ -3,8 +3,9 @@ module MajorizationExtrema
 using LinearAlgebra
 using StatsBase: fisher_yates_sample!
 
-export simplexpt, randsimplexpt, TV, ≺
-export majmax, majmin
+export simplexpt, randsimplexpt
+export TV, ≺
+export majmax, majmin, localbound
 
 """
     simplexpt(unif)
@@ -27,12 +28,12 @@ Generates points uniformly at random on the standard `d-1` dimensional simplex u
 randsimplexpt(d)  =  simplexpt(rand(Float64, d-1))
 
 """
-    randsimplexpt(d::Int, N::Int)
+    randsimplexpt(d, N::T) where {T <: Integer}
 
 Generates rational numbers with denominator at most `N` uniformly at random on the `d-1` dimensional simplex using an algorithm by [Smith and Tromble](http://www.cs.cmu.edu/~nasmith/papers/smith+tromble.tr04.pdf).
 """
-function randsimplexpt(d::Int, N::Int)
-    unif = zeros(Int,d-1)
+function randsimplexpt(d, N::T) where {T <: Integer}
+    unif = zeros(T,d-1)
     fisher_yates_sample!(1:N,unif)
     unif = unif .// N
     simplexpt(unif)
@@ -52,15 +53,16 @@ TV(p, q) = (1/2)*norm(p - q, 1)
 
 
 """
-    ≺(p, q)
+    ≺(p::AbstractVector{T1}, q::AbstractVector{T2}; tol = (T1 <: AbstractFloat || T2 <: AbstractFloat) ? T2(1e-8) : zero(T2) ) where {T1, T2}
 
-Returns true if `q` majorizes `p` and false otherwise.
+Returns true if `q` majorizes `p` and false otherwise. The keyword argument `tol` specifies a tolerance for the comparisons. Can be used in infix form, i.e. `p ≺ q`.
 """
-function ≺(p, q)
+function ≺(p::AbstractVector{T1}, q::AbstractVector{T2}; tol = (T1 <: AbstractFloat || T2 <: AbstractFloat) ? T2(1e-8) : zero(T2) ) where {T1, T2}
     length(p) == length(q) || throw(ArgumentError("Input vectors must be of the same length"))
     pv = sort(p, rev = true);
     qv = sort(q, rev = true);
-    return all(cumsum(pv) .<= cumsum(qv) )
+    isapprox(sum(p), sum(q), atol=tol, rtol=0) || return false
+    return all(cumsum(pv) .<= ( cumsum(qv) .+ tol ) )
 end
 
 
@@ -106,26 +108,21 @@ function majmin(q, ϵ::ϵT) where {ϵT}
 
     qup = q[inds]
 
-    onetodm1 = 1 : d-1
-    twotod = 2 : d
-
     alpha1s = make_alphas(qup, ϵ);
 
-    n1 =  findfirst(alpha1s[onetodm1]  .<= qup[twotod]);
+    n1 =  findfirst(alpha1s[1 : d-1]  .<= qup[2 : d]);
     n1 === nothing && return inv(T(d)) * ones(T,d);
 
     alpha1 = alpha1s[n1];
-
     alpha1 > 1/d && return inv(T(d)) * ones(T,d);
 
     qdown = sort(q, rev=true);
     alpha2s = make_alphas(qdown, -1*ϵ);
 
-    n2 = findfirst(alpha2s[onetodm1] .>= qdown[twotod] );
+    n2 = findfirst(alpha2s[1 : d-1] .>= qdown[2 : d] );
     n2 === nothing && return inv(T(d)) * ones(T,d);
 
     alpha2 = alpha2s[n2];
-
     alpha2 < 1/d && return inv(T(d)) * ones(T,d);
 
     out = qup
@@ -135,5 +132,16 @@ function majmin(q, ϵ::ϵT) where {ϵT}
     return out[invperm(inds)]
 end
 
+"""
+    localbound(f, p, ϵ)
+
+Returns `δ` such that `|f(p) - f(q)| < δ` for any `q` with `TV(p, q) <= ϵ`, where `p` and `q` are probability vectors. Requires `f` to be Schur convex or Schur concave (but does not check this condition).
+"""
+function localbound(f, p, ϵ)
+    fp = f(p)
+    f_max = f(majmax(p, ϵ))
+    f_min = f(majmin(p, ϵ))
+    return max(abs(fp - f_max), abs(fp - f_min))
+end
 
 end # module
