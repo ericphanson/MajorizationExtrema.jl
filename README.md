@@ -20,7 +20,28 @@ Compute the majorization minimizer and maximizer over total variation balls (in 
 ```julia
 using MajorizationExtrema
 
+q = [0.25, 0.25, 0.5]
+majmin(q, 0.05) # [0.275, 0.275, 0.45]
+majmax(q, 0.05) # [0.2, 0.25, 0.55]
+```
+
+Also works with rational numbers:
+
+```julia
 q = [1//4, 1//4, 1//2]
 majmin(q, 1//20) # [11//40, 11//40, 9//20]
 majmax(q, 1//20) # [1//5, 1//4, 11//20]
 ```
+
+If you're doing extended computations with rational numbers, you may want to use `Rational{BigInt}` types which won't overflow:
+
+```julia
+q = big.([1//4, 1//4, 1//2])
+...
+```
+
+Based on:
+
+>E. P. Hanson and N. Datta, “Maximum and minimum entropy states yielding local continuity bounds,” Journal of Mathematical Physics, vol. 59, no. 4, p. 042204, Apr. 2018.
+
+for which a preprint is available here: <https://arxiv.org/abs/1706.02212v2>.
