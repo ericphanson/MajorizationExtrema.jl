@@ -1,5 +1,5 @@
 using MajorizationExtrema
-using Test
+using Test, LinearAlgebra
 
 function check_simplexpt(q)
     if eltype(q) <: Rational
@@ -8,6 +8,44 @@ function check_simplexpt(q)
         @test sum(q) ≈ one(eltype(q))
     end
     @test all(x -> x >= 0, q)
+end
+
+function entropy(q)
+    eta(x) = x <= 0 ? zero(x) : -x*log2(x)
+    return sum(eta, q)
+end
+
+function sample_L1(d)
+    u = randsimplexpt(2d)
+    return [ u[i] - u[i+d] for i = 1:d ]
+end
+
+
+function sample_TV(p, ϵ)
+    v = sample_L1(length(p))
+    q = p + ϵ*v
+    @. q = clamp(q, 0, 1)
+    q .= q ./ sum(q)
+
+    # Not sure if this is necessary, but a priori it is
+    TV(p, q) > ϵ && return sample_TV(p, ϵ)
+
+    return q
+end
+
+@testset "Test local bound" begin
+    for d = [2, 3, 5, 20]
+        p = randsimplexpt(d)
+        entropy_p = entropy(p)
+        for ϵ = [.01, .01, .1]
+            LB = localbound(entropy, p, ϵ)
+            @test ( LB ≈ entropy(p) - entropy(majmax(p, ϵ)) ) || ( LB ≈ entropy(majmin(p, ϵ)) - entropy(p) )
+            for _ = 1:5
+                r = sample_TV(p, ϵ)
+                @test abs(entropy(r) - entropy_p) <= LB
+            end
+        end
+    end
 end
 
 @testset "Basic checks" begin
@@ -45,14 +83,23 @@ end
         for ϵ in [T(1//30), T(1//20), T(1//4)]
             if T == Float64
                 r = randsimplexpt(d)
+                tol = 1e-8
             elseif T == Rational{Int}
                 r = randsimplexpt(d, rand(10:10000))
+                tol = zero(T)
             elseif T == Rational{BigInt}
                 r = randsimplexpt(d, big(rand(10:10000)))
+                tol = zero(T)
             end
 
             r_max = majmax(r, ϵ)
             r_min = majmin(r, ϵ)
+
+            @test TV(r, r_max) ≈ .5*norm(r-r_max, 1)
+            @test TV(r, r_min) ≈ .5*norm(r-r_min, 1)
+
+            @test TV(r, r_max) <= ϵ + tol
+            @test TV(r, r_min) <= ϵ + tol
 
             check_simplexpt(r)
             check_simplexpt(r_max)

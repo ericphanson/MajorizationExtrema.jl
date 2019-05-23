@@ -136,7 +136,7 @@ end
 """
     localbound(f, p, ϵ)
 
-Returns `δ` such that `|f(p) - f(q)| < δ` for any `q` with `TV(p, q) <= ϵ`, where `p` and `q` are probability vectors. Requires `f` to be Schur convex or Schur concave (but does not check this condition).
+Returns `δ` such that `|f(p) - f(q)| <= δ` for any `q` with `TV(p, q) <= ϵ`, where `p` and `q` are probability vectors. Requires `f` to be Schur convex or Schur concave (but does not check this condition).
 """
 function localbound(f, p, ϵ)
     fp = f(p)
