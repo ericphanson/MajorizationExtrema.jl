@@ -8,25 +8,6 @@
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-"""
-    fisher_yates_sample!([rng], a::AbstractArray, x::AbstractArray)
-Fisher-Yates shuffling (with early termination).
-Pseudo-code:
-```
-n = length(a)
-k = length(x)
-# Create an array of the indices
-inds = collect(1:n)
-for i = 1:k
-    # swap element `i` with another random element in inds[i:n]
-    # set element `i` in `x`
-end
-```
-This algorithm consumes `k=length(x)` random numbers. It uses an integer array of
-length `n=length(a)` internally to maintain the shuffled indices. It is considerably
-faster than Knuth's algorithm especially when `n` is greater than `k`.
-It is ``O(n)`` for initialization, plus ``O(k)`` for random shuffling
-"""
 function fisher_yates_sample!(rng::AbstractRNG, a::AbstractArray, x::AbstractArray)
     n = length(a)
     k = length(x)

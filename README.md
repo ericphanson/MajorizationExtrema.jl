@@ -47,7 +47,7 @@ q = big.([1//4, 1//4, 1//2])
 ...
 ```
 
-This allows the computation of local bounds of Schur concave or Schur convex functions on probability distributions around a specific distribution. For example,
+The existence of majorization minimizer and maximizers allows the computation of local bounds of Schur concave or Schur convex functions on probability distributions around a specific distribution; `localbound` is provided as a convenience function for this. For example,
 
 ```julia
 using MajorizationExtrema
@@ -63,4 +63,4 @@ q = randsimplexpt(3) # a random probability distribution
 abs(entropy(p) - entropy(q)) <= localbound(entropy, p, ϵ) # true
 ```
 
-Note `localbound` only depends on the choice of `q` via `ϵ`. In other words, the bound holds uniformly over all probability distributions `q` within total variation distance `ϵ` of `p`.
+Note `localbound(entropy, p, ϵ)` only depends on the choice of `q` via `ϵ`; the bound holds uniformly over all probability distributions `q` within total variation distance `ϵ` of `p`.
