@@ -15,12 +15,13 @@ function entropy(q)
     return sum(eta, q)
 end
 
+# this likely doesn't sample uniformly
 function sample_L1(d)
     u = randsimplexpt(2d)
     return [ u[i] - u[i+d] for i = 1:d ]
 end
 
-
+# this definitely does not sample uniformly
 function sample_TV(p, ϵ)
     v = sample_L1(length(p))
     q = p + ϵ*v
@@ -39,9 +40,13 @@ end
         entropy_p = entropy(p)
         for ϵ = [.01, .01, .1]
             LB = localbound(entropy, p, ϵ)
+            p_max = majmax(p, ϵ)
+            p_min = majmin(p, ϵ)
             @test ( LB ≈ entropy(p) - entropy(majmax(p, ϵ)) ) || ( LB ≈ entropy(majmin(p, ϵ)) - entropy(p) )
             for _ = 1:5
                 r = sample_TV(p, ϵ)
+                @test p_min ≺ r
+                @test r ≺ p_max
                 @test abs(entropy(r) - entropy_p) <= LB
             end
         end
