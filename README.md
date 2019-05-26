@@ -25,7 +25,7 @@ Provides the following functions:
 ```julia
 TV, tracedist, ≺ # distances, majorization
 majmax, majmin, localbound # majorization-extrema
-simplexpt, randsimplexpt, randunitary, randdm # generate random data
+randprobvec, randunitary, randdm # generate random data
 ```
 
 Compute the majorization minimizer and maximizer over total variation balls of discrete probability distributions (in finite dimensions).
@@ -66,7 +66,7 @@ function entropy(q)
 end
 
 p = [.2, .3, .5] # a fixed probability distribution
-q = randsimplexpt(3) # a random probability distribution
+q = randprobvec(3) # a random probability distribution
 ϵ = TV(p, q) # total variation distance
 abs(entropy(p) - entropy(q)) <= localbound(entropy, p, ϵ) # true
 ```

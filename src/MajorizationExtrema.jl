@@ -4,7 +4,7 @@ using LinearAlgebra, Random
 
 export TV, tracedist, ≺ # distances, majorization
 export majmax, majmin, localbound # majorization-extrema
-export simplexpt, randsimplexpt, randunitary, randdm # generate random data
+export randprobvec, randunitary, randdm # generate random data
 
 
 include("random_utilities.jl")

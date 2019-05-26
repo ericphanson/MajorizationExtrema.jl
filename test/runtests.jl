@@ -24,7 +24,7 @@ entropy(ρ::AbstractMatrix) = entropy(eigvals(ρ))
 
 # this likely doesn't sample uniformly
 function sample_L1(d)
-    u = randsimplexpt(2d)
+    u = randprobvec(2d)
     return [ u[i] - u[i+d] for i = 1:d ]
 end
 
@@ -41,13 +41,42 @@ function sample_TV(p, ϵ)
     return q
 end
 
+@testset "Types" begin
+    @test @inferred(randdm(3)) isa Hermitian
+    ρ = randdm(3)
+    @test @inferred(majmin(ρ, .01)) isa Hermitian
+    @test @inferred(majmax(ρ, .01)) isa Hermitian
+    @test eltype(@inferred(majmin(ρ, 1//10))) == Complex{Float64}
+
+    @test typeof(@inferred(randprobvec(3))) == Vector{Float64}
+    @test typeof(@inferred(randprobvec(3, 100))) == Vector{Rational{Int}}
+    @test typeof(@inferred(randprobvec(3, big(100)))) == Vector{Rational{BigInt}}
+
+    for m in (majmin, majmax)
+        p = randprobvec(3)
+        @test typeof(@inferred(m(p, .01))) == Vector{Float64}
+        @test typeof(@inferred(m(p, 1//10))) == Vector{Float64}
+        @test typeof(@inferred(m(p, big(1//10)))) == Vector{Float64}
+
+        p = randprobvec(3, 100)
+        @test typeof(@inferred(m(p, .01))) == Vector{Rational{Int}}
+        @test typeof(@inferred(m(p, 1//10))) == Vector{Rational{Int}}
+        @test typeof(@inferred(m(p, big(1//10)))) == Vector{Rational{Int}}
+
+        p = randprobvec(3, big(100))
+        @test typeof(@inferred(m(p, .01))) == Vector{Rational{BigInt}}
+        @test typeof(@inferred(m(p, 1//10))) == Vector{Rational{BigInt}}
+        @test typeof(@inferred(m(p, big(1//10)))) == Vector{Rational{BigInt}}
+    end
+
+end
 
 @testset "Quantum states" begin
 
     X = [1.0 2.0; 0.0 0.0]
     @test_throws ArgumentError majmin(X, .01)
     @test_throws ArgumentError majmax(X, .01)
-    
+
     ρ = randdm(2)
     @test_throws ArgumentError ρ ≺ X
     @test_throws ArgumentError X ≺ ρ
@@ -66,7 +95,7 @@ end
             check_dm(ρ)
             @test localbound(entropy, ρ, ϵ) <= ϵ*log2(d-1) + entropy([ϵ, 1 - ϵ])
 
-            p = randsimplexpt(d)
+            p = randprobvec(d)
             U = randunitary(d)
             @test U * U' ≈ idmat
             @test U' * U ≈ idmat
@@ -84,8 +113,8 @@ end
                 @test majmin(ρ, ϵ) ≈ idmat/d
             end
 
-            p = randsimplexpt(d)
-            q = randsimplexpt(d)
+            p = randprobvec(d)
+            q = randprobvec(d)
             ρ =  U * Diagonal(p) * U'
             σ =  U * Diagonal(q) * U'
             @test tracedist(ρ, σ) ≈ tracedist(Hermitian(ρ), Hermitian(σ))
@@ -97,7 +126,7 @@ end
 
 @testset "Test local bound" begin
     for d = [2, 3, 5, 20]
-        p = randsimplexpt(d)
+        p = randprobvec(d)
         entropy_p = entropy(p)
         for ϵ = [.01, .01, .1]
             LB = localbound(entropy, p, ϵ)
@@ -150,13 +179,13 @@ end
 
         for ϵ in [T(1//30), T(1//20), T(1//4)]
             if T == Float64
-                r = randsimplexpt(d)
+                r = randprobvec(d)
                 tol = 1e-8
             elseif T == Rational{Int}
-                r = randsimplexpt(d, rand(10:10000))
+                r = randprobvec(d, rand(10:10000))
                 tol = zero(T)
             elseif T == Rational{BigInt}
-                r = randsimplexpt(d, big(rand(10:10000)))
+                r = randprobvec(d, big(rand(10:10000)))
                 tol = zero(T)
             end
 
@@ -187,7 +216,7 @@ end
 
 @testset "Random tests" begin
     for _ = 1:10
-        q_rational = randsimplexpt(3, 1000)
+        q_rational = randprobvec(3, 1000)
         check_simplexpt(q_rational)
 
         q_float = float.(q_rational)
