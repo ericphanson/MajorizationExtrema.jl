@@ -32,7 +32,7 @@ Returns the maximum in majorization order over the total variation ball (of prob
 function majmax(q::AbstractVector, ϵ)
     d = length(q);
     T = eltype(q);
-    inds =sortperm(q);
+    inds = sortperm(q);
     q = q[inds];
     p = zeros(T,d);
     budget = ϵ;
@@ -62,13 +62,13 @@ Returns the minimum in majorization order over the total variation ball (of prob
 function majmin(q::AbstractVector, ϵ)
     T = eltype(q)
     d = length(q)
-    inds =sortperm(q, rev = false);
+    inds = sortperm(q, rev = false);
 
     qup = q[inds]
 
     alpha1s = make_alphas(qup, ϵ);
 
-    n1 =  findfirst(alpha1s[1 : d-1]  .<= qup[2 : d]);
+    n1 = findfirst(alpha1s[1 : d-1]  .<= qup[2 : d]);
     n1 === nothing && return inv(T(d)) * ones(T,d);
 
     alpha1 = alpha1s[n1];

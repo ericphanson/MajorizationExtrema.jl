@@ -152,6 +152,9 @@ end
     @test !(q ≺ p)
     @test TV(p, q) == 1//6
 
+    @test_throws ArgumentError [1//3, 1//3, 1//3] ≺ [1//3, 1//3, 1//3 , 1//3]
+    @test_throws ArgumentError [1/3, 1/3, 1/3] ≺ [1/3, 1/3, 1/3, 1/3]
+
     @test majmin(q, 1//20) == [11//40, 11//40, 9//20]
     @test majmax(q, 1//20) == [1//5, 1//4, 11//20]
     @test majmax(q, 2) == [0//1, 0//1, 1//1]

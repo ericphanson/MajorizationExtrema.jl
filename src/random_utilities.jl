@@ -7,7 +7,7 @@ Takes a vector of length `d-1` of numbers between `0` and `1` and converts it a 
 """
 function simplexpt(unif)
     d = length(unif) + 1; T = eltype(unif)
-    w= zeros(T,d+1)
+    w= zeros(T, d+1)
     w[2:d] .= sort(unif)
     w[d+1] = one(T)
     diff(w)
@@ -43,7 +43,7 @@ randprobvec(d::dT, N::T) where {T <: Integer, dT <: Integer} = randprobvec(Rando
 Generates a unitary matrix of dimension `d` at random according to the Haar measure, using an algorithm described by Maris Ozols in ["How to generate a random unitary matrix"](http://home.lu.lv/~sd20008/papers/essays/Random%20unitary%20%5Bpaper%5D.pdf).
 """
 function randunitary(rng::AbstractRNG, d::T) where {T <: Integer}
-   RG = randn(rng, d,d) + im*randn(rng, d,d)
+   RG = randn(rng, d, d) + im*randn(rng, d, d)
    Q,R = qr!(RG);
    r = diag(R)
    L = Diagonal(r./abs.(r));
