@@ -10,10 +10,17 @@ function check_simplexpt(q)
     @test all(x -> x >= 0, q)
 end
 
-function entropy(q)
+function check_dm(ρ)
+    @test tr(ρ) ≈ one(eltype(ρ))
+    @test eigmin(ρ) >= - 1e-8
+end
+
+function entropy(q::AbstractVector)
     eta(x) = x <= 0 ? zero(x) : -x*log2(x)
     return sum(eta, q)
 end
+
+entropy(ρ::AbstractMatrix) = entropy(eigvals(ρ))
 
 # this likely doesn't sample uniformly
 function sample_L1(d)
@@ -32,6 +39,60 @@ function sample_TV(p, ϵ)
     TV(p, q) > ϵ && return sample_TV(p, ϵ)
 
     return q
+end
+
+
+@testset "Quantum states" begin
+
+    X = [1.0 2.0; 0.0 0.0]
+    @test_throws ArgumentError majmin(X, .01)
+    @test_throws ArgumentError majmax(X, .01)
+    
+    ρ = randdm(2)
+    @test_throws ArgumentError ρ ≺ X
+    @test_throws ArgumentError X ≺ ρ
+    for d in (2, 3, 5)
+        idmat = Matrix(1.0I, d, d)
+        
+        for ϵ in (1, 2, 1-1/d + .01)
+            ρ = randdm(d)
+            check_dm(ρ)
+            @test majmin(ρ, ϵ) ≈ idmat/d  
+            @test tr(majmax(ρ, ϵ)^2) ≈ 1.0
+        end
+
+        for ϵ in (.01, .05, .1)
+            ρ = randdm(d)
+            check_dm(ρ)
+            @test localbound(entropy, ρ, ϵ) <= ϵ*log2(d-1) + entropy([ϵ, 1 - ϵ])
+
+            p = randsimplexpt(d)
+            U = randunitary(d)
+            @test U * U' ≈ idmat
+            @test U' * U ≈ idmat
+
+            ρ = U * Diagonal(p) * U'
+            ρ = (ρ + ρ')/2
+            check_dm(ρ)
+
+            @test majmin(ρ, ϵ) ≈ U * Diagonal(majmin(p, ϵ)) * U'
+            @test majmax(ρ, ϵ) ≈ U * Diagonal(majmax(p, ϵ)) * U'
+
+            if tracedist(ρ, idmat/d) > ϵ
+                @test tracedist(majmin(ρ, ϵ), ρ) ≈ ϵ
+            else
+                @test majmin(ρ, ϵ) ≈ idmat/d
+            end
+
+            p = randsimplexpt(d)
+            q = randsimplexpt(d)
+            ρ =  U * Diagonal(p) * U'
+            σ =  U * Diagonal(q) * U'
+            @test tracedist(ρ, σ) ≈ tracedist(Hermitian(ρ), Hermitian(σ))
+            @test tracedist(ρ, σ) ≈ TV(p, q)
+        end
+
+    end
 end
 
 @testset "Test local bound" begin
@@ -59,6 +120,7 @@ end
     q = [1//4, 1//4, 1//2]
 
     @test p ≺ q
+    @test !(q ≺ p)
     @test TV(p, q) == 1//6
 
     @test majmin(q, 1//20) == [11//40, 11//40, 9//20]
@@ -70,6 +132,7 @@ end
     q = float.(q)
 
     @test p ≺ q
+    @test !(q ≺ p)
     @test majmin(q, 1/20) ≈ [11/40, 11/40, 9/20]
     @test majmax(q, 1/20) ≈ [1/5, 1/4, 11/20]
     @test majmax(q, 2) ≈ [0, 0, 1]

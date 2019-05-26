@@ -20,6 +20,14 @@ for which a preprint is available here: <https://arxiv.org/abs/1706.02212v2>.
 
 ## Usage
 
+Provides the following functions:
+
+```julia
+TV, tracedist, ≺ # distances, majorization
+majmax, majmin, localbound # majorization-extrema
+simplexpt, randsimplexpt, randunitary, randdm # generate random data
+```
+
 Compute the majorization minimizer and maximizer over total variation balls of discrete probability distributions (in finite dimensions).
 
 ```julia
@@ -64,3 +72,26 @@ abs(entropy(p) - entropy(q)) <= localbound(entropy, p, ϵ) # true
 ```
 
 Note `localbound(entropy, p, ϵ)` only depends on the choice of `q` via `ϵ`; the bound holds uniformly over all probability distributions `q` within total variation distance `ϵ` of `p`.
+
+These functions also work on quantum density matrices. For example,
+
+```julia
+julia> using MajorizationExtrema
+
+julia> ρ = randdm(3)
+3×3 LinearAlgebra.Hermitian{Complex{Float64},Array{Complex{Float64},2}}:
+   0.235005+0.0im         0.00492117+0.00548039im  -0.0168253-0.020445im 
+ 0.00492117-0.00548039im    0.458451+0.0im         -0.0724026+0.0714849im
+ -0.0168253+0.020445im    -0.0724026-0.0714849im     0.306544+0.0im      
+
+julia> σ = majmin(ρ, .01)
+3×3 LinearAlgebra.Hermitian{Complex{Float64},Array{Complex{Float64},2}}:
+   0.242182+0.0im         0.00433537+0.00652348im  -0.0142623-0.0168348im
+ 0.00433537-0.00652348im     0.45091+0.0im         -0.0689234+0.0679345im
+ -0.0142623+0.0168348im   -0.0689234-0.0679345im     0.306909+0.0im      
+
+julia> σ ≺ ρ
+true
+```
+
+(One will likely want to write `using LinearAlgebra` when working with quantum states in order to compute eigenvalues, etc.)
