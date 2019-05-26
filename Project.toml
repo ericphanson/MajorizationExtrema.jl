@@ -1,7 +1,7 @@
 name = "MajorizationExtrema"
 uuid = "42adfb1e-7d51-11e9-2954-1f97c1ef8590"
 authors = ["Eric"]
-version = "0.2.0"
+version = "0.2.1"
 
 [deps]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
