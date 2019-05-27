@@ -56,15 +56,15 @@ end
         p = randprobvec(3)
         @test typeof(@inferred(m(p, .01))) == Vector{Float64}
         @test typeof(@inferred(m(p, 1//10))) == Vector{Float64}
-        @test typeof(@inferred(m(p, big(1//10)))) == Vector{Float64}
+        @test typeof(@inferred(m(p, big(1//10)))) == Vector{BigFloat}
 
         p = randprobvec(3, 100)
-        @test typeof(@inferred(m(p, .01))) == Vector{Rational{Int}}
+        @test typeof(@inferred(m(p, .01))) == Vector{Float64}
         @test typeof(@inferred(m(p, 1//10))) == Vector{Rational{Int}}
-        @test typeof(@inferred(m(p, big(1//10)))) == Vector{Rational{Int}}
+        @test typeof(@inferred(m(p, big(1//10)))) == Vector{Rational{BigInt}}
 
         p = randprobvec(3, big(100))
-        @test typeof(@inferred(m(p, .01))) == Vector{Rational{BigInt}}
+        @test typeof(@inferred(m(p, .01))) == Vector{BigFloat}
         @test typeof(@inferred(m(p, 1//10))) == Vector{Rational{BigInt}}
         @test typeof(@inferred(m(p, big(1//10)))) == Vector{Rational{BigInt}}
     end
@@ -88,6 +88,8 @@ end
             check_dm(ρ)
             @test majmin(ρ, ϵ) ≈ idmat/d  
             @test tr(majmax(ρ, ϵ)^2) ≈ 1.0
+            @test majmin(ρ, ϵ) ≺ ρ
+            @test ρ ≺ majmax(ρ, ϵ)
         end
 
         for ϵ in (.01, .05, .1)
@@ -106,6 +108,9 @@ end
 
             @test majmin(ρ, ϵ) ≈ U * Diagonal(majmin(p, ϵ)) * U'
             @test majmax(ρ, ϵ) ≈ U * Diagonal(majmax(p, ϵ)) * U'
+
+            @test majmin(ρ, ϵ) ≺ ρ
+            @test ρ ≺ majmax(ρ, ϵ)
 
             if tracedist(ρ, idmat/d) > ϵ
                 @test tracedist(majmin(ρ, ϵ), ρ) ≈ ϵ
@@ -145,15 +150,19 @@ end
 
 @testset "Basic checks" begin
 
+    p1 = [1//3, 1//3, 1//3]
+    p2 = [1//3, 1//3, 1//3 , 1//3]
+    @test_throws DimensionMismatch p1 ≺ p2
+    @test_throws DimensionMismatch float.(p1) ≺ float.(p2)
+    @test_throws DimensionMismatch TV(p1, p2)
+    @test_throws DimensionMismatch TV(float.(p1), float.(p2))
+
     p = [1//3, 1//3, 1//3]
     q = [1//4, 1//4, 1//2]
 
     @test p ≺ q
     @test !(q ≺ p)
     @test TV(p, q) == 1//6
-
-    @test_throws ArgumentError [1//3, 1//3, 1//3] ≺ [1//3, 1//3, 1//3 , 1//3]
-    @test_throws ArgumentError [1/3, 1/3, 1/3] ≺ [1/3, 1/3, 1/3, 1/3]
 
     @test majmin(q, 1//20) == [11//40, 11//40, 9//20]
     @test majmax(q, 1//20) == [1//5, 1//4, 11//20]
@@ -168,6 +177,9 @@ end
     @test majmin(q, 1/20) ≈ [11/40, 11/40, 9/20]
     @test majmax(q, 1/20) ≈ [1/5, 1/4, 11/20]
     @test majmax(q, 2) ≈ [0, 0, 1]
+    @test majmin(q, 2) ≈ [1/3, 1/3, 1/3]
+
+    @test TV(p, q) ≈ 1/6
 
 
 end
