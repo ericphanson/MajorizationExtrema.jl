@@ -23,6 +23,9 @@ function ≺(p::AbstractVector{T1}, q::AbstractVector{T2}; tol = (T1 <: Abstract
     return all(cumsum(pv) .<= ( cumsum(qv) .+ tol ) )
 end
 
+function ≻(p::AbstractVector{T1}, q::AbstractVector{T2}; tol = (T1 <: AbstractFloat || T2 <: AbstractFloat) ? T2(1e-8) : zero(T2) ) where {T1, T2}
+    ≺(q, p; tol=tol)
+end
 
 """
     majmax(q::AbstractVector, ϵ)

@@ -23,7 +23,7 @@ for which a preprint is available here: <https://arxiv.org/abs/1706.02212v2>.
 Provides the following functions:
 
 ```julia
-TV, tracedist, ≺ # distances, majorization
+TV, tracedist, ≺, ≻ # distances, majorization
 majmax, majmin, localbound # majorization-extrema
 randprobvec, randunitary, randdm # generate random data
 ```
