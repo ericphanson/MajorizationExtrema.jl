@@ -1,4 +1,5 @@
 using MajorizationExtrema
+using MajorizationExtrema: entropy
 using Test, LinearAlgebra
 
 function check_simplexpt(q)
@@ -14,13 +15,6 @@ function check_dm(ρ)
     @test tr(ρ) ≈ one(eltype(ρ))
     @test eigmin(ρ) >= - 1e-8
 end
-
-function entropy(q::AbstractVector)
-    eta(x) = x <= 0 ? zero(x) : -x*log2(x)
-    return sum(eta, q)
-end
-
-entropy(ρ::AbstractMatrix) = entropy(eigvals(ρ))
 
 # this likely doesn't sample uniformly
 function sample_L1(d)
@@ -51,6 +45,7 @@ end
     @test typeof(@inferred(randprobvec(3))) == Vector{Float64}
     @test typeof(@inferred(randprobvec(3, 100))) == Vector{Rational{Int}}
     @test typeof(@inferred(randprobvec(3, big(100)))) == Vector{Rational{BigInt}}
+    @test typeof(@inferred(randprobvec(BigFloat, 3))) == Vector{BigFloat}
 
     for m in (majmin, majmax)
         p = randprobvec(3)
@@ -184,7 +179,7 @@ end
 
 end
 
-@testset "Tests with type $T" for T = [Float64, Rational{Int}, Rational{BigInt}] 
+@testset "Tests with type $T" for T = [Float64, BigFloat, Rational{Int}, Rational{BigInt}] 
     for d in [2, 3, 5, 10]
     
         δ = zeros(T, d)
@@ -196,6 +191,9 @@ end
             if T == Float64
                 r = randprobvec(d)
                 tol = 1e-8
+            elseif T == BigFloat
+                r = randprobvec(BigFloat,d)
+                tol = 1e-25
             elseif T == Rational{Int}
                 r = randprobvec(d, rand(10:10000))
                 tol = zero(T)
@@ -249,5 +247,24 @@ end
             @test sort(majmax(q_rational, ϵ)) == [0//1, 0//1, 1//1]
             @test sort(majmax(q_float, ϵ)) ≈ [0.0, 0.0, 1.0]
         end
+
+        for T in (Float64, BigFloat)
+            p, q = @inferred(MajorizationExtrema.randincomppair(T, 4))
+            @test !(p ≺ q) && !(q ≺ p)
+            @test !(p ≻ q) && !(q ≻ p)
+            check_simplexpt(p)
+            check_simplexpt(q)
+            @test eltype(p) == T
+            @test eltype(q) == T
+
+            p, q = @inferred(MajorizationExtrema.randmajpair(T, 4))
+            @test (p ≺ q) && (q ≻ p)
+            check_simplexpt(p)
+            check_simplexpt(q)
+            @test eltype(p) == T
+            @test eltype(q) == T
+        end
+
+
     end
 end

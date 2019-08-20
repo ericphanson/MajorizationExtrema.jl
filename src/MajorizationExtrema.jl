@@ -2,7 +2,7 @@ module MajorizationExtrema
 
 using LinearAlgebra, Random
 
-export TV, tracedist, ≺ # distances, majorization
+export TV, tracedist, ≺, ≻ # distances, majorization
 export majmax, majmin, localbound # majorization-extrema
 export randprobvec, randunitary, randdm # generate random data
 
@@ -13,6 +13,9 @@ include("classical_case.jl")
 
 # reduce to classical via eigenvalues
 include("quantum_case.jl")
+
+include("entropies.jl")
+
 
 """
     localbound(f, p, ϵ)
