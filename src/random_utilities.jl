@@ -106,7 +106,7 @@ function randincomppair(args...; sortby = entropy)
         q = randprobvec(args...)
         p ≺ q && continue
         p ≻ q && continue
-        if entropy(p) >= entropy(q)
+        if sortby(p) >= sortby(q)
             return p, q
         else
             return q, p
