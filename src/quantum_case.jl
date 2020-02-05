@@ -23,22 +23,23 @@ majmax(ρ::Hermitian, ϵ) = eig_promote(p -> majmax(p, ϵ), ρ)
 
 Returns true if `σ` majorizes `ρ` and false otherwise. The keyword argument `tol` specifies a tolerance for the comparisons. Can be used in infix form, i.e. `ρ ≺ σ`.
 """
-≺(ρ::Hermitian, σ::Hermitian; tol=1e-8) = ≺(eigvals(ρ), eigvals(σ); tol=tol)  
+≺(ρ::Hermitian, σ::Hermitian; tol = 1e-8) = ≺(eigvals(ρ), eigvals(σ); tol = tol)
 
 """
     tracedist(ρ::AbstractMatrix, σ::AbstractMatrix)
 
 Computes the trace distance between two matrices `ρ` and `σ`.
 """
-tracedist(ρ::AbstractMatrix, σ::AbstractMatrix) = .5*sum(abs, eigvals(ρ - σ))
+tracedist(ρ::AbstractMatrix, σ::AbstractMatrix) = 0.5 * sum(abs, eigvals(ρ - σ))
 
-tracedist(ρ::Hermitian, σ::Hermitian) = .5*sum(svdvals(ρ - σ))
+tracedist(ρ::Hermitian, σ::Hermitian) = 0.5 * sum(svdvals(ρ - σ))
 
 # error checking and wrapping for non `Hermitian`-type matrices:
 
-function ≺(ρ::AbstractMatrix, σ::AbstractMatrix; tol=1e-8)
-    ishermitian(ρ) && ishermitian(σ) || throw(ArgumentError("Inputs must be Hermitian matricies"))
-    ≺(Hermitian(ρ), Hermitian(σ); tol=tol)  
+function ≺(ρ::AbstractMatrix, σ::AbstractMatrix; tol = 1e-8)
+    ishermitian(ρ) && ishermitian(σ) ||
+    throw(ArgumentError("Inputs must be Hermitian matricies"))
+    ≺(Hermitian(ρ), Hermitian(σ); tol = tol)
 end
 
 function majmax(ρ::AbstractMatrix, ϵ)

@@ -53,17 +53,17 @@ function majmin!(nrm::OneNorm, spvm::SortedProbVecMult, ϵ)
     if length(distinct_entries) == 1
         return spvm
     elseif length(distinct_entries) == 2
-       _majmin_onenorm_2entries!(spvm::SortedProbVecMult, ϵ)
+        _majmin_onenorm_2entries!(spvm::SortedProbVecMult, ϵ)
     else
         kp = first(multiplicities)
         km = last(multiplicities)
 
-        δp = kp*(distinct_entries[1] - distinct_entries[2])
-        δm = km*(distinct_entries[end-1] - distinct_entries[end])
+        δp = kp * (distinct_entries[1] - distinct_entries[2])
+        δm = km * (distinct_entries[end-1] - distinct_entries[end])
         gap = min(δp, δm)
         if ϵ < gap
-            distinct_entries[1] -= ϵ/kp
-            distinct_entries[end] += ϵ/km
+            distinct_entries[1] -= ϵ / kp
+            distinct_entries[end] += ϵ / km
             return spvm
         else
             if δp < δm
@@ -71,14 +71,14 @@ function majmin!(nrm::OneNorm, spvm::SortedProbVecMult, ϵ)
                 deleteat!(distinct_entries, 1)
                 deleteat!(multiplicities, 1)
                 multiplicities[1] += kp
-                distinct_entries[end] += δp/km
+                distinct_entries[end] += δp / km
                 return majmin!(nrm, spvm, ϵ - δp)
             elseif δm < δp
                 # evolve for time δm and recurse
                 pop!(distinct_entries)
                 pop!(multiplicities)
                 multiplicities[end] += km
-                distinct_entries[1] -= δm/kp
+                distinct_entries[1] -= δm / kp
                 return majmin!(nrm, spvm, ϵ - δm)
             else
                 # evolve for time gap=δm=δp and recurse
@@ -106,15 +106,15 @@ function _majmin_onenorm_2entries!(spvm::SortedProbVecMult, ϵ)
     # the smaller entry is increasing at a rate t/km
     # Need to solve   `μp - t/kp == μm + t/km` for `t`
     # t = (μp - μm) / ( 1/km + 1/kp )
-    t = (μp - μm)*(km*kp) / ( km + kp )
+    t = (μp - μm) * (km * kp) / (km + kp)
     if ϵ < t
-        distinct_entries[1] -= ϵ/kp
-        distinct_entries[2] += ϵ/km
+        distinct_entries[1] -= ϵ / kp
+        distinct_entries[2] += ϵ / km
         return spvm
     else
         pop!(distinct_entries)
         pop!(multiplicities)
-        distinct_entries[] -= t/kp
+        distinct_entries[] -= t / kp
         multiplicities[] += km
         return spvm
     end

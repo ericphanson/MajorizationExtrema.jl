@@ -28,4 +28,4 @@ function fisher_yates_sample!(rng::AbstractRNG, a::AbstractArray, x::AbstractArr
     return x
 end
 fisher_yates_sample!(a::AbstractArray, x::AbstractArray) =
-fisher_yates_sample!(Random.GLOBAL_RNG, a, x)
+    fisher_yates_sample!(Random.GLOBAL_RNG, a, x)
