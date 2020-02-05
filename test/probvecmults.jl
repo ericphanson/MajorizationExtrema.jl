@@ -14,7 +14,7 @@ end
     for d in (2, 3, 5), T in (Float64, BigFloat)
         v = randprobvec(T, d)
         spvm = SortedProbVecMult(v)
-        for ϵ in range(0.0, 1.0, length = 100)
+        for ϵ in 0.0:.01:1.0
             @test majmin(sort(v; rev = true), ϵ) ≈ collect(majmin(spvm, ϵ))
         end
     end
