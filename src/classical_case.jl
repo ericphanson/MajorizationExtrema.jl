@@ -111,4 +111,3 @@ function majmin(q::AbstractVector, ϵ)
     invpermute!(out, inds)
     return VT(out)
 end
-

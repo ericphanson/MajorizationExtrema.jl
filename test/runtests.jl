@@ -268,3 +268,6 @@ end
 
     end
 end
+
+include("probvecmults.jl")
+include("subentropy.jl")

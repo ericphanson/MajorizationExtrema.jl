@@ -1,6 +1,9 @@
 module MajorizationExtrema
 
 using LinearAlgebra, Random
+using UnPack
+using LinearAlgebra: dot
+using ForwardDiff
 
 export TV, tracedist, ≺, ≻ # distances, majorization
 export majmax, majmin, localbound # majorization-extrema
@@ -10,6 +13,8 @@ export randprobvec, randunitary, randdm # generate random data
 include("random_utilities.jl")
 
 include("classical_case.jl")
+
+include("probvecmults.jl")
 
 # reduce to classical via eigenvalues
 include("quantum_case.jl")
