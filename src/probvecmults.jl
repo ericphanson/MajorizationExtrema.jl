@@ -5,9 +5,26 @@ struct OneNorm <: MajFlowNorm end
 struct InfNorm <: MajFlowNorm end
 
 export SortedProbVecMult
-struct SortedProbVecMult{VT}
+
+struct SortedProbVecMult{T, VT <: AbstractVector{T}} <: AbstractVector{T}
     distinct_entries::VT
     multiplicities::Vector{Int}
+end
+
+
+Base.size(r::SortedProbVecMult) = (sum(r.multiplicities),)
+Base.eltype(r::SortedProbVecMult{T}) where {T} = T
+
+Base.@propagate_inbounds function Base.getindex(r::SortedProbVecMult, i::Int)
+    @boundscheck (1 <= i <= length(r)) || throw(BoundsError(r,i))
+    ks = r.multiplicities
+    seen_so_far = 0
+    for j = eachindex(ks)
+        seen_so_far += ks[j]
+        if seen_so_far >= i
+            return r.distinct_entries[j]
+        end
+    end
 end
 
 function SortedProbVecMult(v::AbstractVector)
@@ -23,14 +40,14 @@ function SortedProbVecMult(v::AbstractVector)
         end
 
     end
-    SortedProbVecMult{typeof(distinct_entries)}(distinct_entries, multiplicities)
+    SortedProbVecMult{eltype(distinct_entries), typeof(distinct_entries)}(distinct_entries, multiplicities)
 end
 
 
 function Base.collect(spvm::SortedProbVecMult)
     @unpack distinct_entries, multiplicities = spvm
     v = eltype(distinct_entries)[]
-
+    sizehint!(v, length(spvm))
     for (i, elt) in enumerate(distinct_entries)
         for j = 1:multiplicities[i]
             push!(v, elt)
