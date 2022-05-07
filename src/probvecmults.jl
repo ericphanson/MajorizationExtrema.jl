@@ -151,22 +151,19 @@ function majmin!(nrm::InfNorm, spvm::SortedProbVecMult, ϵ)
     m = length(distinct_entries)
     @assert m > 2
     if m == 2
+        # Likely incorrect
         return _majmin_infnorm_2entries!(spvm, ϵ)
     end
-    # n = length(spvm)
-    # k = findfirst(==(one(T)//n), distinct_entries)
-    # if k !== nothing
-    #     X = [-ones(T, k-1); zero(T); ones(T, m-k-1)]
-    #     @assert length(X) == m
-    #     ϵ₁ = min(distinct_entries[k-1] - distinct_entries[k], distinct_entries[k] - distinct_entries[k+1], (distinct_entries[k-1] - distinct_entries[k+1]) // 2)
-    # else
-    #     k = findfirst(<(one(T)//n), distinct_entries)
-    #     X = [-ones(T, k); ones(T, m-k)]
-    #     @assert length(X) == m
-    #     ϵ₁ = (distinct_entries[k] - distinct_entries[k+1]) // 2
-    # end
 
-        # the larger entry is decreasing at a rate t/kp
+    # Algorithm for computing the majorization minimizer over an infinity-norm ball on the simplex:
+    # 1. The largest half of distinct entries decrease infinitesimally with a rate proportional to their multiplicity
+    # 2. The smallest half of distinct entries increase infinitesimally with a rate proportional to their multiplicity
+    # 3. If there's an odd number of distinct entries, the middle one doesn't move
+    # The number of distinct entries is "re-evaluated infinitesimally"
+    # in reality we just compute the crossings and re-evaluate then.
+
+    # Compute the gaps
+    # the larger entry is decreasing at a rate t/kp
     # the smaller entry is increasing at a rate t/km
     # Need to solve   `μp - t/kp == μm + t/km` for `t`
     # t = (μp - μm) / ( 1/km + 1/kp )
