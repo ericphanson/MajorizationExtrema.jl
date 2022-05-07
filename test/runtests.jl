@@ -35,6 +35,19 @@ function sample_TV(p, ϵ)
     return q
 end
 
+function sample_inf(d)
+    v = 2rand(d) .- 1
+    return v .- sum(v)
+end
+
+function sample_inf(p, ϵ)
+    v = sample_inf(length(p))
+    q = @. clamp(p + ϵ * v, zero(eltype(p)), one(eltype(p)))
+    q .= q ./ sum(q)
+    norm(p - q, Inf) > ϵ && return sample_inf(p, ϵ)
+    return q
+end
+
 @testset "Types" begin
     @test @inferred(randdm(3)) isa Hermitian
     ρ = randdm(3)
@@ -271,3 +284,13 @@ end
 
 include("probvecmults.jl")
 include("subentropy.jl")
+
+@testset "inf" begin
+    p = randprobvec(d)
+    ϵ = 0.1
+    p_min = majmin(InfNorm(), SortedProbVecMult(p), ϵ)
+    for _ = 1:500
+        r = sample_inf(p, ϵ)
+        @test p_min ≺ r
+    end
+end

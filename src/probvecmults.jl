@@ -8,11 +8,12 @@ struct InfNorm <: MajFlowNorm end
 
 export SortedProbVecMult
 
-Base.:(-)(spvm::SortedProbVecMult, spvm2::SortedProbVecMult) = SortedProbVecMult(collect(spvm) - collect(spvm2))
 struct SortedProbVecMult{T, VT <: AbstractVector{T}} <: AbstractVector{T}
     distinct_entries::VT
     multiplicities::Vector{Int}
 end
+
+Base.:(-)(spvm::SortedProbVecMult, spvm2::SortedProbVecMult) = SortedProbVecMult(collect(spvm) - collect(spvm2))
 
 
 Base.size(r::SortedProbVecMult) = (sum(r.multiplicities),)
@@ -142,10 +143,27 @@ function _majmin_2_entries(spvm::SortedProbVecMult, ϵ)
 
 end
 
+
+function gap(positions, velocities)
+    n = length(positions)
+    smallest_gap = typemax(eltype(positions))
+    for j =1:n
+        for k = 1:n
+            velocities[j] == velocities[k] && continue
+            gap = (positions[k] - positions[j]) * inv(velocities[j]-velocities[k])
+            gap >= 0  || continue
+            smallest_gap = min(smallest_gap, gap)
+        end
+    end
+    @assert smallest_gap < typemax(eltype(positions))
+    return smallest_gap
+end
+
+
 function majmin!(nrm::InfNorm, spvm::SortedProbVecMult, ϵ)
     @unpack distinct_entries, multiplicities = spvm
     @assert issorted(distinct_entries; rev=true)
-    @assert sum(spvm) == 1
+    @assert sum(spvm) == 1 sum(spvm)
     T = eltype(spvm)
     @assert T == Rational{BigInt} == typeof(ϵ)
     # ϵ = min(ϵ, nrm(spvm, ones(T, length(spvm)) .// length(spvm)))
@@ -163,43 +181,28 @@ function majmin!(nrm::InfNorm, spvm::SortedProbVecMult, ϵ)
     # The number of distinct entries is "re-evaluated infinitesimally"
     # in reality we just compute the crossings and re-evaluate then.
 
-    # Compute the gaps
-    # the larger entry is decreasing at a rate t/kp
-    # the smaller entry is increasing at a rate t/km
-    # Need to solve   `μp - t/kp == μm + t/km` for `t`
-    # t = (μp - μm) / ( 1/km + 1/kp )
-    gap(i, j) = (distinct_entries[i] - distinct_entries[j]) * (multiplicities[i] * multiplicities[j]) / (multiplicities[i] + multiplicities[j])
-
-    # the larger entry is decreasing at a rate t/kp
-    # the smaller entry is not moving
-    # Need to solve  `μp - t/kp == μm` for `t`
-    # t = (μp - μm)*kp
-    gap2(i, j) = (distinct_entries[i] - distinct_entries[j]) * multiplicities[i]
-
-
-    # the larger entry is not moving
-    # the smaller entry is increasing at rate t/km
-    # Need to solve  `μp  == μm + t/km` for `t`
-    # t = (μp - μm)*km
-    gap3(i, j) = (distinct_entries[i] - distinct_entries[j]) * multiplicities[j]
-
     if isodd(m)
         k = (m-1)÷2
         X = [-ones(T, k); zero(T); ones(T, k)]
         @assert length(X) == m
         @assert sum(X) == 0
-        X = X .// multiplicities
-        ϵ₁ = min(gap2(k, k+1), gap3(k+1, k+2), gap(k, k+2))
-        @assert ϵ₁ >= 0
+        X = X .* inv.(T.(multiplicities))
+        # ϵ₁ = min(gap2(k, k+1), gap3(k+1, k+2), gap(k, k+2))
+        # @assert ϵ₁ >= 0
     else
         k = m÷2
         X = [-ones(T, k); ones(T, k)]
         @assert length(X) == m
         @assert sum(X) == 0
-        X = X .// multiplicities
-        ϵ₁ = gap(k, k+1)
-        @assert ϵ₁ >= 0
+        X = X .* inv.(T.(multiplicities))
+        # ϵ₁ = gap(k, k+1)
+        # @assert ϵ₁ >= 0
     end
+
+    ϵ₁ = gap(distinct_entries, X)
+    @show ϵ₁
+    @assert ϵ₁ >= 0 ϵ₁
+
     @show Float64.(distinct_entries), Float64(ϵ), Float64(ϵ₁), multiplicities
 
     @assert !iszero(ϵ₁)
