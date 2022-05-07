@@ -73,7 +73,7 @@ function majmin!(nrm::OneNorm, spvm::SortedProbVecMult, ϵ)
     if length(distinct_entries) == 1
         return spvm
     elseif length(distinct_entries) == 2
-        _majmin_onenorm_2entries!(spvm::SortedProbVecMult, ϵ)
+        _majmin_2_entries(spvm::SortedProbVecMult, ϵ)
     else
         kp = first(multiplicities)
         km = last(multiplicities)
@@ -115,9 +115,10 @@ function majmin!(nrm::OneNorm, spvm::SortedProbVecMult, ϵ)
 end
 
 
+# This actually works for either 1-norm or infinity norm (I think)
 # With only 2 entries, the next crossing isn't just determined by
 # gap = min(δp, δm).
-function _majmin_onenorm_2entries!(spvm::SortedProbVecMult, ϵ)
+function _majmin_2_entries(spvm::SortedProbVecMult, ϵ)
     @unpack distinct_entries, multiplicities = spvm
     @assert length(distinct_entries) == length(multiplicities) == 2
     kp, km = multiplicities
@@ -149,10 +150,10 @@ function majmin!(nrm::InfNorm, spvm::SortedProbVecMult, ϵ)
     @assert T == Rational{BigInt} == typeof(ϵ)
     # ϵ = min(ϵ, nrm(spvm, ones(T, length(spvm)) .// length(spvm)))
     m = length(distinct_entries)
-    @assert m > 2
+    # @assert m > 2
     if m == 2
-        # Likely incorrect
-        return _majmin_infnorm_2entries!(spvm, ϵ)
+        @show Float64.(distinct_entries), Float64(ϵ), multiplicities
+        return _majmin_2_entries(spvm, ϵ)
     end
 
     # Algorithm for computing the majorization minimizer over an infinity-norm ball on the simplex:
@@ -222,27 +223,6 @@ function majmin!(nrm::InfNorm, spvm::SortedProbVecMult, ϵ)
 
 end
 
-
-function _majmin_infnorm_2entries!(spvm::SortedProbVecMult, ϵ)
-    @unpack distinct_entries, multiplicities = spvm
-    @assert issorted(distinct_entries; rev=true)
-    @assert length(distinct_entries) == length(multiplicities) == 2
-    kp, km = multiplicities
-    μp, μm = distinct_entries
-    t = μp - μm
-    if ϵ < t
-        distinct_entries[1] -= ϵ
-        distinct_entries[2] += ϵ
-    else
-        pop!(distinct_entries)
-        pop!(multiplicities)
-        multiplicities[] += km
-        distinct_entries[] = one(eltype(spvm)) // length(spvm)
-    end
-    spvm = SortedProbVecMult(collect(spvm))
-    @show Float64.(distinct_entries), Float64(ϵ), multiplicities
-    return spvm
-end
 
 using Convex, Tulip
 function majmin_inf(p, ϵ)
