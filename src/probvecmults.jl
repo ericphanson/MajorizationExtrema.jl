@@ -142,39 +142,61 @@ end
 
 function majmin!(nrm::InfNorm, spvm::SortedProbVecMult, ϵ)
     @unpack distinct_entries, multiplicities = spvm
+    @assert issorted(distinct_entries; rev=true)
     T = eltype(spvm)
     # ϵ = min(ϵ, nrm(spvm, ones(T, length(spvm)) .// length(spvm)))
     m = length(distinct_entries)
     if m == 2
         return _majmin_infnorm_2entries!(spvm, ϵ)
     end
+    n = length(spvm)
+        # k = (m-1)÷2
+    # k = findfirst(==(one(T)//n), distinct_entries)
+    # if k !== nothing
+    #     X = [-ones(T, k-1); zero(T); ones(T, m-k-1)]
+    #     @assert length(X) == m
+    #     ϵ₁ = min(distinct_entries[k-1] - distinct_entries[k], distinct_entries[k] - distinct_entries[k+1], (distinct_entries[k-1] - distinct_entries[k+1]) // 2)
+    # else
+    #     k = findfirst(<(one(T)//n), distinct_entries)
+    #     X = [-ones(T, k); ones(T, m-k)]
+    #     @assert length(X) == m
+    #     ϵ₁ = (distinct_entries[k] - distinct_entries[k+1]) // 2
+    # end
     if isodd(m)
         k = (m-1)÷2
         X = [-ones(T, k); zero(T); ones(T, k)]
-        ϵ₁ = min(distinct_entries[k] - distinct_entries[k+1], distinct_entries[k+1] - distinct_entries[k+2])
+        @assert length(X) == m
+    ϵ₁ = min(distinct_entries[k] - distinct_entries[k+1], distinct_entries[k+1] - distinct_entries[k+2], (distinct_entries[k] - distinct_entries[k+2]) // 2)
     else
         k = m÷2
         X = [-ones(T, k); ones(T, k)]
-        ϵ₁ = distinct_entries[k] - distinct_entries[k+1]
+        @assert length(X) == m
+        ϵ₁ = (distinct_entries[k] - distinct_entries[k+1]) // 2
     end
-    @show Float64.(float.(spvm)), Float64(ϵ), multiplicities
+    @show Float64.(distinct_entries), Float64(ϵ), Float64(ϵ₁), multiplicities
 
-    iszero(ϵ₁) && return spvm
+    @assert !iszero(ϵ₁)
+    # iszero(ϵ₁) && return spvm
     if ϵ₁ < ϵ
         remaining_ϵ = ϵ - ϵ₁
         @. spvm.distinct_entries += X*ϵ₁
+        @assert issorted(distinct_entries; rev=true)
+
         spvm = SortedProbVecMult(collect(spvm))
         return majmin!(nrm, spvm, remaining_ϵ)
     else
         @. spvm.distinct_entries += X*ϵ
+        @assert issorted(distinct_entries; rev=true) m
     end
     spvm = SortedProbVecMult(collect(spvm))
+    @show Float64.(distinct_entries), Float64(ϵ), multiplicities
     return spvm
 end
 
 
 function _majmin_infnorm_2entries!(spvm::SortedProbVecMult, ϵ)
     @unpack distinct_entries, multiplicities = spvm
+    @assert issorted(distinct_entries; rev=true)
     @assert length(distinct_entries) == length(multiplicities) == 2
     kp, km = multiplicities
     μp, μm = distinct_entries
@@ -189,6 +211,23 @@ function _majmin_infnorm_2entries!(spvm::SortedProbVecMult, ϵ)
         distinct_entries[] = one(eltype(spvm)) // length(spvm)
     end
     spvm = SortedProbVecMult(collect(spvm))
-    @show Float64.(float.(spvm)), Float64(ϵ), multiplicities
+    @show Float64.(distinct_entries), Float64(ϵ), multiplicities
     return spvm
+end
+
+using Convex, Tulip
+function majmin_inf(p, ϵ)
+    ϵ < 1e-12 && return p
+    perm = sortperm(p)
+    p = p[perm]
+    d = length(p)
+    q = Variable(d)
+    constraints = [ q >= 0, sum(q) == 1, - ϵ <= q - p, q - p <= ϵ]
+    y = [big(0.0)]
+    for k = 1:d
+        prob = minimize(sumlargest(q, k), constraints; numeric_type=BigFloat)
+        solve!(prob, Tulip.Optimizer{BigFloat}(); silent_solver=true)
+        push!(y, prob.optval)
+    end
+    return sort(diff(y))[invperm(perm)]
 end
