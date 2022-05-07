@@ -8,7 +8,7 @@ using ForwardDiff
 export TV, tracedist, ≺, ≻ # distances, majorization
 export majmax, majmin, localbound # majorization-extrema
 export randprobvec, randunitary, randdm # generate random data
-
+export SortedProbVecMult, InfNorm, OneNorm
 
 include("random_utilities.jl")
 

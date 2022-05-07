@@ -4,8 +4,11 @@ struct OneNorm <: MajFlowNorm end
 
 struct InfNorm <: MajFlowNorm end
 
+(nrm::InfNorm)(s, q) = norm(s - q, Inf)
+
 export SortedProbVecMult
 
+Base.:(-)(spvm::SortedProbVecMult, spvm2::SortedProbVecMult) = SortedProbVecMult(collect(spvm) - collect(spvm2))
 struct SortedProbVecMult{T, VT <: AbstractVector{T}} <: AbstractVector{T}
     distinct_entries::VT
     multiplicities::Vector{Int}
@@ -135,4 +138,57 @@ function _majmin_onenorm_2entries!(spvm::SortedProbVecMult, ϵ)
         multiplicities[] += km
         return spvm
     end
+end
+
+function majmin!(nrm::InfNorm, spvm::SortedProbVecMult, ϵ)
+    @unpack distinct_entries, multiplicities = spvm
+    T = eltype(spvm)
+    # ϵ = min(ϵ, nrm(spvm, ones(T, length(spvm)) .// length(spvm)))
+    m = length(distinct_entries)
+    if m == 2
+        return _majmin_infnorm_2entries!(spvm, ϵ)
+    end
+    if isodd(m)
+        k = (m-1)÷2
+        X = [-ones(T, k); zero(T); ones(T, k)]
+        ϵ₁ = min(distinct_entries[k] - distinct_entries[k+1], distinct_entries[k+1] - distinct_entries[k+2])
+    else
+        k = m÷2
+        X = [-ones(T, k); ones(T, k)]
+        ϵ₁ = distinct_entries[k] - distinct_entries[k+1]
+    end
+    @show Float64.(float.(spvm)), Float64(ϵ), multiplicities
+
+    iszero(ϵ₁) && return spvm
+    if ϵ₁ < ϵ
+        remaining_ϵ = ϵ - ϵ₁
+        @. spvm.distinct_entries += X*ϵ₁
+        spvm = SortedProbVecMult(collect(spvm))
+        return majmin!(nrm, spvm, remaining_ϵ)
+    else
+        @. spvm.distinct_entries += X*ϵ
+    end
+    spvm = SortedProbVecMult(collect(spvm))
+    return spvm
+end
+
+
+function _majmin_infnorm_2entries!(spvm::SortedProbVecMult, ϵ)
+    @unpack distinct_entries, multiplicities = spvm
+    @assert length(distinct_entries) == length(multiplicities) == 2
+    kp, km = multiplicities
+    μp, μm = distinct_entries
+    t = μp - μm
+    if ϵ < t
+        distinct_entries[1] -= ϵ
+        distinct_entries[2] += ϵ
+    else
+        pop!(distinct_entries)
+        pop!(multiplicities)
+        multiplicities[] += km
+        distinct_entries[] = one(eltype(spvm)) // length(spvm)
+    end
+    spvm = SortedProbVecMult(collect(spvm))
+    @show Float64.(float.(spvm)), Float64(ϵ), multiplicities
+    return spvm
 end
