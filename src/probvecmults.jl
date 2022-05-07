@@ -138,19 +138,22 @@ function _majmin_onenorm_2entries!(spvm::SortedProbVecMult, ϵ)
         multiplicities[] += km
         return spvm
     end
+
 end
 
 function majmin!(nrm::InfNorm, spvm::SortedProbVecMult, ϵ)
     @unpack distinct_entries, multiplicities = spvm
     @assert issorted(distinct_entries; rev=true)
+    @assert sum(spvm) == 1
     T = eltype(spvm)
+    @assert T == Rational{BigInt} == typeof(ϵ)
     # ϵ = min(ϵ, nrm(spvm, ones(T, length(spvm)) .// length(spvm)))
     m = length(distinct_entries)
+    @assert m > 2
     if m == 2
         return _majmin_infnorm_2entries!(spvm, ϵ)
     end
-    n = length(spvm)
-        # k = (m-1)÷2
+    # n = length(spvm)
     # k = findfirst(==(one(T)//n), distinct_entries)
     # if k !== nothing
     #     X = [-ones(T, k-1); zero(T); ones(T, m-k-1)]
@@ -162,16 +165,27 @@ function majmin!(nrm::InfNorm, spvm::SortedProbVecMult, ϵ)
     #     @assert length(X) == m
     #     ϵ₁ = (distinct_entries[k] - distinct_entries[k+1]) // 2
     # end
+
+    gap(i, j) = (distinct_entries[i] - distinct_entries[j]) * (multiplicities[i] * multiplicities[j]) / (multiplicities[i] + multiplicities[j])
+
+    gap2(i, j) = (distinct_entries[i] - distinct_entries[j]) * multiplicities[i]
+
     if isodd(m)
         k = (m-1)÷2
         X = [-ones(T, k); zero(T); ones(T, k)]
         @assert length(X) == m
-    ϵ₁ = min(distinct_entries[k] - distinct_entries[k+1], distinct_entries[k+1] - distinct_entries[k+2], (distinct_entries[k] - distinct_entries[k+2]) // 2)
+        @assert sum(X) == 0
+        X = X .// multiplicities
+        ϵ₁ = min(gap2(k, k+1), gap2(k+1, k+2), gap(k, k+2))
+        @assert ϵ₁ >= 0
     else
         k = m÷2
         X = [-ones(T, k); ones(T, k)]
         @assert length(X) == m
-        ϵ₁ = (distinct_entries[k] - distinct_entries[k+1]) // 2
+        @assert sum(X) == 0
+        X = X .// multiplicities
+        ϵ₁ = gap(k, k+1)
+        @assert ϵ₁ >= 0
     end
     @show Float64.(distinct_entries), Float64(ϵ), Float64(ϵ₁), multiplicities
 
@@ -186,11 +200,14 @@ function majmin!(nrm::InfNorm, spvm::SortedProbVecMult, ϵ)
         return majmin!(nrm, spvm, remaining_ϵ)
     else
         @. spvm.distinct_entries += X*ϵ
-        @assert issorted(distinct_entries; rev=true) m
+        @assert issorted(distinct_entries; rev=true)
+
+        spvm = SortedProbVecMult(collect(spvm))
+        
+        @show Float64.(distinct_entries), Float64(ϵ), multiplicities
+        return spvm
     end
-    spvm = SortedProbVecMult(collect(spvm))
-    @show Float64.(distinct_entries), Float64(ϵ), multiplicities
-    return spvm
+
 end
 
 
