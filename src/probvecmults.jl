@@ -166,9 +166,24 @@ function majmin!(nrm::InfNorm, spvm::SortedProbVecMult, ϵ)
     #     ϵ₁ = (distinct_entries[k] - distinct_entries[k+1]) // 2
     # end
 
+        # the larger entry is decreasing at a rate t/kp
+    # the smaller entry is increasing at a rate t/km
+    # Need to solve   `μp - t/kp == μm + t/km` for `t`
+    # t = (μp - μm) / ( 1/km + 1/kp )
     gap(i, j) = (distinct_entries[i] - distinct_entries[j]) * (multiplicities[i] * multiplicities[j]) / (multiplicities[i] + multiplicities[j])
 
+    # the larger entry is decreasing at a rate t/kp
+    # the smaller entry is not moving
+    # Need to solve  `μp - t/kp == μm` for `t`
+    # t = (μp - μm)*kp
     gap2(i, j) = (distinct_entries[i] - distinct_entries[j]) * multiplicities[i]
+
+
+    # the larger entry is not moving
+    # the smaller entry is increasing at rate t/km
+    # Need to solve  `μp  == μm + t/km` for `t`
+    # t = (μp - μm)*km
+    gap3(i, j) = (distinct_entries[i] - distinct_entries[j]) * multiplicities[j]
 
     if isodd(m)
         k = (m-1)÷2
@@ -176,7 +191,7 @@ function majmin!(nrm::InfNorm, spvm::SortedProbVecMult, ϵ)
         @assert length(X) == m
         @assert sum(X) == 0
         X = X .// multiplicities
-        ϵ₁ = min(gap2(k, k+1), gap2(k+1, k+2), gap(k, k+2))
+        ϵ₁ = min(gap2(k, k+1), gap3(k+1, k+2), gap(k, k+2))
         @assert ϵ₁ >= 0
     else
         k = m÷2
@@ -247,4 +262,17 @@ function majmin_inf(p, ϵ)
         push!(y, prob.optval)
     end
     return sort(diff(y))[invperm(perm)]
+end
+
+using Test
+function test_inf(v, ϵ)
+    sort!(v; rev=true)
+    v = Rational{BigInt}.(v)
+    ϵ = Rational{BigInt}(ϵ)
+    @assert sum(v) == 1
+    @assert 0 < ϵ < 1
+
+    x = majmin(InfNorm(), SortedProbVecMult(v), ϵ)
+    y = MajorizationExtrema.majmin_inf(v, ϵ)
+    @test Float64.(x) ≈ Float64.(y)
 end

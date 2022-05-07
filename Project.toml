@@ -8,6 +8,7 @@ Convex = "f65535da-76fb-5f13-bab9-19810c17039a"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Tulip = "6dd1b50a-3aae-11e9-10b5-ef983d2400fa"
 UnPack = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
 
