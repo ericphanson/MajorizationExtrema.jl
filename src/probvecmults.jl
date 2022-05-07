@@ -273,3 +273,8 @@ function test_inf(v, ϵ)
     y = MajorizationExtrema.majmin_inf(v, ϵ)
     @test Float64.(x) ≈ Float64.(y)
 end
+
+# TODO:
+# 1. Fix m=2 case
+# 2. Prove formula/algorithm
+# 3. Prove semigroup property
